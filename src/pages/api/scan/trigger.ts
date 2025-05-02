@@ -39,14 +39,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await prisma.scan.create({
       data: {
         domain,
-        result: {
+        result: JSON.parse(JSON.stringify({
           vulnerabilities: parsed,
           emailSecurity,
-          // summary, // uncomment when GPT enabled
-        },
+        })),
         userId: user.id,
       },
     });
+    
 
     // 6. Return to UI
     res.status(200).json({
