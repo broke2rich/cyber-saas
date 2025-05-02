@@ -1,25 +1,21 @@
 import { useEffect, useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import Link from "next/link";
 import axios from "axios";
-import { getSession } from "next-auth/react";
-import { GetServerSideProps } from "next";
-import { signOut } from "next-auth/react";
+import { saveAs } from "file-saver";
 
 type Scan = {
   id: string;
   domain: string;
   createdAt: string;
-  result: {
-    vulnerabilities: any[];
-    emailSecurity: {
-      spf: boolean;
-      dkim: boolean;
-      dmarc: boolean;
-    };
-  };
+  result: any;
 };
 
 export default function ScanHistory() {
+  const { data: session } = useSession();
   const [scans, setScans] = useState<Scan[]>([]);
+  const [filter, setFilter] = useState("");
+  const [sortNewest, setSortNewest] = useState(true);
 
   useEffect(() => {
     const fetchScans = async () => {
@@ -30,66 +26,97 @@ export default function ScanHistory() {
         console.error("Failed to fetch scan history", err);
       }
     };
-
     fetchScans();
   }, []);
 
+  const filteredScans = scans
+    .filter((scan) => scan.domain.includes(filter))
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return sortNewest ? dateB - dateA : dateA - dateB;
+    });
+
+  const exportCSV = () => {
+    const headers = ["Domain", "Created At"];
+    const rows = filteredScans.map(scan => [scan.domain, new Date(scan.createdAt).toLocaleString()]);
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+    saveAs(blob, "scan-history.csv");
+  };
+
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Scan History</h1>
+    <div className="min-h-screen flex bg-gray-100">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white shadow-md p-6 hidden md:block">
+        <h2 className="text-xl font-bold mb-4">CyberSaaS</h2>
+        <nav className="space-y-2">
+          <Link href="/dashboard" className="block text-gray-800 hover:text-blue-600">
+            Dashboard
+          </Link>
+          <Link href="/dashboard/history" className="block text-gray-800 hover:text-blue-600">
+            Scan History
+          </Link>
+        </nav>
         <button
           onClick={() => signOut()}
-          className="text-red-600 underline text-sm"
+          className="mt-10 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
         >
-          Log out
+          Log Out
         </button>
-      </div>
+      </aside>
 
-      {scans.length === 0 ? (
-        <p>No scans yet.</p>
-      ) : (
-        <ul className="space-y-4">
-          {scans.map((scan) => (
-            <li key={scan.id} className="border p-4 rounded shadow">
-              <p className="text-lg font-medium">{scan.domain}</p>
-              <p className="text-sm text-gray-500">
-                Scanned at: {new Date(scan.createdAt).toLocaleString()}
-              </p>
+      {/* Main Content */}
+      <main className="flex-1 p-6">
+        <div className="max-w-5xl mx-auto">
+          <h1 className="text-3xl font-bold mb-6">Scan History</h1>
 
-              <div className="mt-2 space-y-1 text-sm">
-                <p className="font-semibold">Email Security:</p>
-                <ul className="ml-4 list-disc">
-                  <li>SPF: {scan.result.emailSecurity.spf ? "✅ Present" : "❌ Missing"}</li>
-                  <li>DKIM: {scan.result.emailSecurity.dkim ? "✅ Present" : "❌ Missing"}</li>
-                  <li>DMARC: {scan.result.emailSecurity.dmarc ? "✅ Present" : "❌ Missing"}</li>
-                </ul>
+          <div className="flex items-center justify-between mb-4">
+            <input
+              type="text"
+              placeholder="Filter by domain..."
+              className="border p-2 rounded w-1/2"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
+            <div className="space-x-2">
+              <button
+                className="bg-blue-500 text-white px-4 py-2 rounded"
+                onClick={() => setSortNewest(!sortNewest)}
+              >
+                Sort: {sortNewest ? "Newest" : "Oldest"}
+              </button>
+              <button
+                className="bg-green-600 text-white px-4 py-2 rounded"
+                onClick={exportCSV}
+              >
+                Export CSV
+              </button>
+            </div>
+          </div>
 
-                <p className="mt-3 font-semibold">Top 3 Vulnerabilities:</p>
-                <pre className="bg-gray-100 p-2 rounded overflow-x-auto">
-                  {JSON.stringify(scan.result.vulnerabilities.slice(0, 3), null, 2)}
-                </pre>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+          {filteredScans.length === 0 ? (
+            <p className="text-gray-600">No scans found.</p>
+          ) : (
+            <ul className="space-y-4">
+              {filteredScans.map((scan) => (
+                <li
+                  key={scan.id}
+                  className="bg-white shadow rounded p-4 border border-gray-200"
+                >
+                  <p className="font-semibold">Domain: {scan.domain}</p>
+                  <p className="text-sm text-gray-600">
+                    Created: {new Date(scan.createdAt).toLocaleString()}
+                  </p>
+                  <pre className="mt-2 text-sm text-gray-700 bg-gray-100 p-2 rounded overflow-x-auto">
+                    {JSON.stringify(scan.result, null, 2)}
+                  </pre>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </main>
     </div>
   );
 }
-
-// Protects the page — redirect if not logged in
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const session = await getSession(context);
-
-  if (!session) {
-    return {
-      redirect: {
-        destination: "/login",
-        permanent: false,
-      },
-    };
-  }
-
-  return { props: { session } };
-};
