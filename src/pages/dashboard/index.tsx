@@ -1,54 +1,16 @@
-import { useSession, signOut } from "next-auth/react";
-import ScanTriggerForm from "@/components/ScanTriggerForm";
-import Link from "next/link";
+import Layout from "@components/Layout";
+import ScanTriggerForm from "@components/ScanTriggerForm";
 
-export const getServerSideProps = async () => {
-  return { props: {} };
-};
-
-export default function Dashboard() {
-  const session = useSession().data;
-
-  if (!session) {
-    return <p className="p-6">Loading session...</p>;
-  }
-
+export default function DashboardPage() {
   return (
-    <div className="min-h-screen flex bg-gray-100">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white shadow-md p-6 hidden md:block">
-        <h2 className="text-xl font-bold mb-4">CyberSaaS</h2>
-        <nav className="space-y-2">
-          <Link href="/dashboard" className="block text-gray-800 hover:text-blue-600">
-            Dashboard
-          </Link>
-          <Link href="/dashboard/history" className="block text-gray-800 hover:text-blue-600">
-            Scan History
-          </Link>
-        </nav>
-        <button
-          onClick={() => signOut()}
-          className="mt-10 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-        >
-          Log Out
-        </button>
-      </aside>
+    <Layout>
+      <div className="max-w-3xl mx-auto space-y-6">
+        <h2 className="text-3xl font-semibold">Start a New Scan</h2>
 
-      {/* Main Content */}
-      <main className="flex-1 p-6">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold mb-6">Welcome, {session?.user?.email || "User"}</h1>
-          <div className="bg-white shadow-md rounded p-6">
-            <h2 className="text-xl font-semibold mb-4">Start a New Scan</h2>
-            <ScanTriggerForm />
-          </div>
-          <div className="mt-6">
-            <Link href="/dashboard/history" className="text-blue-600 hover:underline">
-              → View Scan History
-            </Link>
-          </div>
+        <div className="bg-white shadow-md border rounded-xl p-6 space-y-4">
+          <ScanTriggerForm />
         </div>
-      </main>
-    </div>
+      </div>
+    </Layout>
   );
 }
