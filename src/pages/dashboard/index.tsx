@@ -2,8 +2,16 @@ import { useSession, signOut } from "next-auth/react";
 import ScanTriggerForm from "@/components/ScanTriggerForm";
 import Link from "next/link";
 
+export const getServerSideProps = async () => {
+  return { props: {} };
+};
+
 export default function Dashboard() {
-  const { data: session } = useSession();
+  const session = useSession().data;
+
+  if (!session) {
+    return <p className="p-6">Loading session...</p>;
+  }
 
   return (
     <div className="min-h-screen flex bg-gray-100">

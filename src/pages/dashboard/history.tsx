@@ -4,6 +4,10 @@ import Link from "next/link";
 import axios from "axios";
 import { saveAs } from "file-saver";
 
+export const getServerSideProps = async () => {
+  return { props: {} };
+};
+
 type Scan = {
   id: string;
   domain: string;
@@ -12,7 +16,7 @@ type Scan = {
 };
 
 export default function ScanHistory() {
-  const { data: session } = useSession();
+  const session = useSession().data;
   const [scans, setScans] = useState<Scan[]>([]);
   const [filter, setFilter] = useState("");
   const [sortNewest, setSortNewest] = useState(true);
@@ -44,6 +48,10 @@ export default function ScanHistory() {
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
     saveAs(blob, "scan-history.csv");
   };
+
+  if (!session) {
+    return <p className="p-6">Loading session...</p>;
+  }
 
   return (
     <div className="min-h-screen flex bg-gray-100">
