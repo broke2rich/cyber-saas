@@ -1,5 +1,4 @@
-import Layout from "@/components/Layout";
-import ScanHistoryTable from "@/components/ScanHistoryTable"; // Or your inline table code
+import Layout from "@components/Layout";
 
 export default function HistoryPage() {
   return (
