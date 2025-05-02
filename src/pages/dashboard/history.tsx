@@ -21,8 +21,12 @@ interface Scan {
 }
 
 export default function HistoryPage() {
-  const sessionData = useSession();
-const session = sessionData?.data;
+  const sessionResult = useSession();
+const session = sessionResult?.data;
+
+if (!session) return <div>Not logged in</div>;
+
+
   const [scans, setScans] = useState<Scan[]>([]);
 
   useEffect(() => {

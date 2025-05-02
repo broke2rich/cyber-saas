@@ -1,7 +1,15 @@
+import { useSession } from "next-auth/react";
 import Layout from "@components/Layout";
 import ScanTriggerForm from "@components/ScanTriggerForm";
 
 export default function DashboardPage() {
+  const sessionResult = useSession();
+  const session = sessionResult?.data;
+
+  if (!session) {
+    return <div className="p-4 text-center">Not logged in</div>;
+  }
+
   return (
     <Layout>
       <div className="max-w-3xl mx-auto space-y-6">
