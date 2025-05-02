@@ -21,7 +21,8 @@ interface Scan {
 }
 
 export default function HistoryPage() {
-  const { data: session } = useSession();
+  const sessionData = useSession();
+const session = sessionData?.data;
   const [scans, setScans] = useState<Scan[]>([]);
 
   useEffect(() => {
